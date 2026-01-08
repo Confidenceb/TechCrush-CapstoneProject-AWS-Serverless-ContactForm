@@ -1,72 +1,163 @@
-const FileList = ({ files, onDelete }) => {
+import { File, FileText, Image, Film, Music, Download, Trash2, FileCode, Eye } from 'lucide-react'
+
+const getFileIcon = (fileName, type) => {
+  const extension = fileName.split('.').pop().toLowerCase()
+  const size = 24
+  const color = "var(--text-secondary)"
+
+  if (type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(extension)) {
+    return <Image size={size} color="#a855f7" />
+  }
+  if (type.startsWith('video/') || ['mp4', 'mov', 'avi'].includes(extension)) {
+    return <Film size={size} color="#ef4444" />
+  }
+  if (type.startsWith('audio/') || ['mp3', 'wav'].includes(extension)) {
+    return <Music size={size} color="#eab308" />
+  }
+  if (['pdf'].includes(extension)) {
+    return <FileText size={size} color="#ef4444" />
+  }
+  if (['doc', 'docx', 'txt'].includes(extension)) {
+    return <FileText size={size} color="#3b82f6" />
+  }
+  if (['js', 'jsx', 'ts', 'tsx', 'html', 'css', 'json'].includes(extension)) {
+    return <FileCode size={size} color="#22c55e" />
+  }
+  return <File size={size} color={color} />
+}
+
+const FileList = ({ files, onDelete, onPreview }) => {
   if (!files || files.length === 0) {
     return (
       <div style={{ 
         textAlign: 'center', 
-        padding: '2rem', 
+        padding: '3rem', 
         color: 'var(--text-secondary)',
-        border: '1px solid var(--border-color)',
+        border: '1px dashed var(--border-color)',
         borderRadius: 'var(--radius-md)',
-        borderStyle: 'dashed'
+        backgroundColor: 'rgba(255, 255, 255, 0.02)'
       }}>
-        No files uploaded yet
+        <File size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+        <p>No files uploaded yet</p>
       </div>
     )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       {files.map((file) => (
         <div 
           key={file.id} 
-          className="card"
+          className="card file-card"
+          onClick={() => onPreview(file)}
           style={{ 
             padding: '1rem', 
             display: 'flex', 
             alignItems: 'center', 
-            justifyContent: 'space-between' 
+            justifyContent: 'space-between',
+            transition: 'transform 0.2s, border-color 0.2s',
+            cursor: 'pointer'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ 
-              width: '40px', 
-              height: '40px', 
+              width: '48px', 
+              height: '48px', 
               backgroundColor: '#2a2a2a', 
-              borderRadius: '8px',
+              borderRadius: '12px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.2rem'
+              justifyContent: 'center'
             }}>
-              📄
+              {getFileIcon(file.name, file.type)}
             </div>
             <div>
-              <div style={{ fontWeight: 500 }}>{file.name}</div>
+              <div style={{ fontWeight: 500, fontSize: '1rem' }}>{file.name}</div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 {file.size} • {file.date}
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
             <button 
-              className="btn" 
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
-              title="Download"
+              className="btn-icon"
+              title="Preview"
+              onClick={() => onPreview(file)}
+              style={{
+                background: 'transparent',
+                border: '1px solid transparent',
+                borderRadius: '8px',
+                padding: '0.5rem',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#2a2a2a'
+                e.currentTarget.style.color = 'var(--primary-color)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = 'var(--text-secondary)'
+              }}
             >
-              ⬇️
+              <Eye size={20} />
             </button>
             <button 
-              className="btn" 
-              style={{ 
-                padding: '0.4rem 0.8rem', 
-                fontSize: '0.9rem',
-                color: '#ef4444',
-                borderColor: 'rgba(239, 68, 68, 0.2)'
+              className="btn-icon"
+              title="Download"
+              style={{
+                background: 'transparent',
+                border: '1px solid transparent',
+                borderRadius: '8px',
+                padding: '0.5rem',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
               }}
-              onClick={() => onDelete(file.id)}
-              title="Delete"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#2a2a2a'
+                e.currentTarget.style.color = 'var(--primary-color)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = 'var(--text-secondary)'
+              }}
             >
-              🗑️
+              <Download size={20} />
+            </button>
+            <button 
+              className="btn-icon"
+              title="Delete"
+              onClick={() => onDelete(file.id)}
+              style={{
+                background: 'transparent',
+                border: '1px solid transparent',
+                borderRadius: '8px',
+                padding: '0.5rem',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'
+                e.currentTarget.style.color = '#ef4444'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = 'var(--text-secondary)'
+              }}
+            >
+              <Trash2 size={20} />
             </button>
           </div>
         </div>
