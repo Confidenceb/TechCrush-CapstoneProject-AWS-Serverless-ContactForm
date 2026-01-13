@@ -44,20 +44,30 @@ const FileList = ({ files, onDelete, onPreview }) => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }} role="list">
       {files.map((file) => (
         <div 
           key={file.id} 
           className="card file-card"
           onClick={() => onPreview(file)}
+          role="listitem"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onPreview(file)
+            }
+          }}
           style={{ 
             padding: '1rem', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'space-between',
             transition: 'transform 0.2s, border-color 0.2s',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            outline: 'none'
           }}
+          aria-label={`Preview ${file.name}`}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ 
@@ -68,7 +78,7 @@ const FileList = ({ files, onDelete, onPreview }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
-            }}>
+            }} aria-hidden="true">
               {getFileIcon(file.name, file.type)}
             </div>
             <div>
@@ -82,6 +92,7 @@ const FileList = ({ files, onDelete, onPreview }) => {
             <button 
               className="btn-icon"
               title="Preview"
+              aria-label={`Preview ${file.name}`}
               onClick={() => onPreview(file)}
               style={{
                 background: 'transparent',
@@ -104,11 +115,12 @@ const FileList = ({ files, onDelete, onPreview }) => {
                 e.currentTarget.style.color = 'var(--text-secondary)'
               }}
             >
-              <Eye size={20} />
+              <Eye size={20} aria-hidden="true" />
             </button>
             <button 
               className="btn-icon"
               title="Download"
+              aria-label={`Download ${file.name}`}
               style={{
                 background: 'transparent',
                 border: '1px solid transparent',
@@ -130,11 +142,12 @@ const FileList = ({ files, onDelete, onPreview }) => {
                 e.currentTarget.style.color = 'var(--text-secondary)'
               }}
             >
-              <Download size={20} />
+              <Download size={20} aria-hidden="true" />
             </button>
             <button 
               className="btn-icon"
               title="Delete"
+              aria-label={`Delete ${file.name}`}
               onClick={() => onDelete(file.id)}
               style={{
                 background: 'transparent',
@@ -157,7 +170,7 @@ const FileList = ({ files, onDelete, onPreview }) => {
                 e.currentTarget.style.color = 'var(--text-secondary)'
               }}
             >
-              <Trash2 size={20} />
+              <Trash2 size={20} aria-hidden="true" />
             </button>
           </div>
         </div>

@@ -6,10 +6,15 @@ import FileList from './components/FileList'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import FilePreviewModal from './components/FilePreviewModal'
+import SearchFilter from './components/SearchFilter'
 import './index.css'
+
+import { AuthProvider, useAuth } from './context/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 
 const Layout = ({ children }) => {
   const location = useLocation()
+  const { user, logout } = useAuth()
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup'
 
   if (isAuthPage) {
@@ -43,10 +48,29 @@ const Layout = ({ children }) => {
             </div>
             <h2 style={{ margin: 0, fontSize: '1.5rem' }}>CloudStore</h2>
           </Link>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <Link to="/login" className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <LogIn size={18} /> Sign In
-            </Link>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            {user ? (
+              <>
+                <span style={{ color: 'var(--text-secondary)' }}>Hi, {user.name}</span>
+                <button 
+                  onClick={logout} 
+                  className="btn" 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem',
+                    background: 'transparent',
+                    border: '1px solid var(--border-color)'
+                  }}
+                >
+                   Sign Out
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <LogIn size={18} /> Sign In
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -60,6 +84,9 @@ const Layout = ({ children }) => {
 const Home = () => {
   const [files, setFiles] = useState([])
   const [previewFile, setPreviewFile] = useState(null)
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterType, setFilterType] = useState('all')
 
   const handleFileUpload = (newFiles) => {
     const uploadedFiles = Array.from(newFiles).map(file => ({
@@ -90,6 +117,23 @@ const Home = () => {
     setPreviewFile(file)
   }
 
+  const filteredFiles = files.filter(file => {
+    const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    if (filterType === 'all') return matchesSearch
+    
+    if (filterType === 'image') return matchesSearch && file.type.startsWith('image/')
+    if (filterType === 'video') return matchesSearch && file.type.startsWith('video/')
+    if (filterType === 'audio') return matchesSearch && file.type.startsWith('audio/')
+    
+    if (filterType === 'document') {
+      const ext = file.name.split('.').pop().toLowerCase()
+      return matchesSearch && ['pdf', 'doc', 'docx', 'txt'].includes(ext)
+    }
+    
+    return matchesSearch
+  })
+
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
@@ -103,7 +147,13 @@ const Home = () => {
       
       <div style={{ marginTop: '3rem' }}>
         <h3 style={{ marginBottom: '1.5rem' }}>Your Files</h3>
-        <FileList files={files} onDelete={handleDelete} onPreview={handlePreview} />
+        <SearchFilter 
+          searchQuery={searchQuery} 
+          setSearchQuery={setSearchQuery} 
+          filterType={filterType} 
+          setFilterType={setFilterType} 
+        />
+        <FileList files={filteredFiles} onDelete={handleDelete} onPreview={handlePreview} />
       </div>
 
       {previewFile && (
@@ -118,15 +168,21 @@ const Home = () => {
 
 function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            } />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </AuthProvider>
   )
 }
 
