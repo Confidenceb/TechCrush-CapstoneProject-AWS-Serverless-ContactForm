@@ -2,17 +2,31 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { UserPlus, Mail, Lock, ArrowRight, User, ArrowLeft } from 'lucide-react'
 
+import { useAuth } from '../context/AuthContext'
+
 const Signup = () => {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
+  const { signup } = useAuth()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Placeholder for signup logic
-    console.log('Signup:', { name, email, password })
-    navigate('/')
+    setError('')
+    setIsSubmitting(true)
+    
+    try {
+      await signup(name, email, password)
+      navigate('/')
+    } catch (err) {
+      setError('Failed to create account. Please try again.')
+      console.error(err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -54,6 +68,21 @@ const Signup = () => {
           <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Create Account</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Join CloudStore today</p>
         </div>
+
+        {error && (
+          <div style={{ 
+            backgroundColor: 'rgba(220, 38, 38, 0.1)', 
+            border: '1px solid rgba(220, 38, 38, 0.2)', 
+            color: '#ef4444', 
+            padding: '0.75rem', 
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '1.5rem',
+            fontSize: '0.9rem',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1.5rem' }}>
@@ -131,8 +160,23 @@ const Signup = () => {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            Create Account <ArrowRight size={18} />
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            disabled={isSubmitting}
+            style={{ 
+              width: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '0.5rem',
+              opacity: isSubmitting ? 0.7 : 1,
+              cursor: isSubmitting ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {isSubmitting ? 'Creating Account...' : (
+              <>Create Account <ArrowRight size={18} /></>
+            )}
           </button>
         </form>
 
