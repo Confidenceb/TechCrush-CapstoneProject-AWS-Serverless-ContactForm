@@ -5,11 +5,13 @@ import FileUpload from './components/FileUpload'
 import FileList from './components/FileList'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import Profile from './pages/Profile'
 import FilePreviewModal from './components/FilePreviewModal'
 import SearchFilter from './components/SearchFilter'
 import './index.css'
 
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { FileProvider, useFile } from './context/FileContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
 const Layout = ({ children }) => {
@@ -51,7 +53,28 @@ const Layout = ({ children }) => {
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             {user ? (
               <>
-                <span style={{ color: 'var(--text-secondary)' }}>Hi, {user.name}</span>
+                <Link to="/profile" style={{ color: 'var(--text-secondary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: 'var(--primary-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    border: '2px solid rgba(255,255,255,0.1)'
+                  }}>
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        {user.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontWeight: '500' }}>{user.name}</span>
+                </Link>
                 <button 
                   onClick={logout} 
                   className="btn" 
@@ -82,36 +105,11 @@ const Layout = ({ children }) => {
 }
 
 const Home = () => {
-  const [files, setFiles] = useState([])
+  const { files, addFiles, removeFile } = useFile()
   const [previewFile, setPreviewFile] = useState(null)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState('all')
-
-  const handleFileUpload = (newFiles) => {
-    const uploadedFiles = Array.from(newFiles).map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: (file.size / 1024).toFixed(2) + ' KB',
-      type: file.type,
-      date: new Date().toLocaleDateString(),
-      previewUrl: URL.createObjectURL(file), // Create object URL for preview
-      originalFile: file
-    }))
-    setFiles(prev => [...prev, ...uploadedFiles])
-  }
-
-  const handleDelete = (id) => {
-    setFiles(prev => {
-      const newFiles = prev.filter(f => f.id !== id)
-      // Cleanup object URL to avoid memory leaks
-      const fileToDelete = prev.find(f => f.id === id)
-      if (fileToDelete && fileToDelete.previewUrl) {
-        URL.revokeObjectURL(fileToDelete.previewUrl)
-      }
-      return newFiles
-    })
-  }
 
   const handlePreview = (file) => {
     setPreviewFile(file)
@@ -143,7 +141,7 @@ const Home = () => {
         </p>
       </div>
 
-      <FileUpload onUpload={handleFileUpload} />
+      <FileUpload onUpload={addFiles} />
       
       <div style={{ marginTop: '3rem' }}>
         <h3 style={{ marginBottom: '1.5rem' }}>Your Files</h3>
@@ -153,7 +151,7 @@ const Home = () => {
           filterType={filterType} 
           setFilterType={setFilterType} 
         />
-        <FileList files={filteredFiles} onDelete={handleDelete} onPreview={handlePreview} />
+        <FileList files={filteredFiles} onDelete={removeFile} onPreview={handlePreview} />
       </div>
 
       {previewFile && (
@@ -169,19 +167,26 @@ const Home = () => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            } />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-          </Routes>
-        </Layout>
-      </Router>
+      <FileProvider>
+        <Router>
+          <Layout>
+            <Routes>
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              } />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </Layout>
+        </Router>
+      </FileProvider>
     </AuthProvider>
   )
 }

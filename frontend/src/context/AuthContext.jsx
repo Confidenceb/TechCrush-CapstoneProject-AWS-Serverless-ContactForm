@@ -62,6 +62,20 @@ export const AuthProvider = ({ children }) => {
     return mockUser;
   };
 
+  const updateProfile = async (data) => {
+    console.log('[MOCK] Updating profile:', data);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    const updatedUser = { ...user, ...data };
+    
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    
+    return updatedUser;
+  };
+
   const logout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
@@ -74,6 +88,7 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
+    updateProfile,
     isAuthenticated: !!user,
   };
 
