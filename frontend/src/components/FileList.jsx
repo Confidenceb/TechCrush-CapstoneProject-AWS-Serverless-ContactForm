@@ -1,4 +1,5 @@
 import { File, FileText, Image, Film, Music, Download, Trash2, FileCode, Eye } from 'lucide-react'
+import { getFileUrl } from '../utils/api'
 
 const getFileIcon = (fileName, type) => {
   const extension = fileName.split('.').pop().toLowerCase()
@@ -25,6 +26,25 @@ const getFileIcon = (fileName, type) => {
   }
   return <File size={size} color={color} />
 }
+
+const handleDownload = async (file) => {
+  try {
+    // Get signed URL
+    const downloadUrl = await getFileUrl(file.id);
+    
+    // Download file
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = file.name;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Download failed:', error);
+    alert('Failed to download file: ' + (error.response?.data?.message || error.message));
+  }
+};
 
 const FileList = ({ files, onDelete, onPreview }) => {
   if (!files || files.length === 0) {
@@ -121,6 +141,7 @@ const FileList = ({ files, onDelete, onPreview }) => {
               className="btn-icon"
               title="Download"
               aria-label={`Download ${file.name}`}
+              onClick={() => handleDownload(file)}
               style={{
                 background: 'transparent',
                 border: '1px solid transparent',
@@ -179,4 +200,4 @@ const FileList = ({ files, onDelete, onPreview }) => {
   )
 }
 
-export default FileList
+export default FileList;

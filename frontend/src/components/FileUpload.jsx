@@ -1,21 +1,14 @@
 import { useState, useRef } from 'react'
-import { Upload, File, FileText, Image, Film, Music } from 'lucide-react'
+import { Upload } from 'lucide-react'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const ALLOWED_TYPES = [
-  'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml',
-  'video/mp4', 'video/quicktime', 'video/x-msvideo',
-  'audio/mpeg', 'audio/wav',
-  'application/pdf',
-  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain', 'application/json', 'text/javascript', 'text/css'
-];
 
 const FileUpload = ({ onUpload }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [currentFile, setCurrentFile] = useState(null)
   const [error, setError] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef(null)
 
   const handleDragOver = (e) => {
@@ -32,14 +25,10 @@ const FileUpload = ({ onUpload }) => {
     if (file.size > MAX_FILE_SIZE) {
       return `File size exceeds 50MB limit: ${file.name}`;
     }
-    // Optional: Strict type checking, but for now we'll be lenient as per requirements
-    // if (!ALLOWED_TYPES.includes(file.type)) {
-    //   return `File type not supported: ${file.name}`;
-    // }
     return null;
   }
 
-  const simulateUpload = (files) => {
+  const handleFiles = async (files) => {
     const fileArray = Array.from(files);
     const validFiles = [];
     let validationError = null;
@@ -60,24 +49,40 @@ const FileUpload = ({ onUpload }) => {
     }
 
     if (validFiles.length > 0) {
-      // Simulate upload progress
+      setError(null);
+      setIsUploading(true);
       setCurrentFile(validFiles[0].name + (validFiles.length > 1 ? ` + ${validFiles.length - 1} others` : ''));
       setUploadProgress(0);
-      setError(null);
 
-      let progress = 0;
+      // Simulate progress
       const interval = setInterval(() => {
-        progress += 10;
-        setUploadProgress(progress);
-        if (progress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            onUpload(validFiles);
-            setUploadProgress(0);
-            setCurrentFile(null);
-          }, 500);
-        }
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + 10;
+        });
       }, 100);
+
+      try {
+        await onUpload(validFiles);
+        setUploadProgress(100);
+        setTimeout(() => {
+          setUploadProgress(0);
+          setCurrentFile(null);
+          setIsUploading(false);
+        }, 500);
+      } catch (error) {
+        console.error('Upload error:', error);
+        setError('Upload failed. Please try again.');
+        setTimeout(() => setError(null), 3000);
+        setUploadProgress(0);
+        setCurrentFile(null);
+        setIsUploading(false);
+      } finally {
+        clearInterval(interval);
+      }
     }
   }
 
@@ -85,13 +90,13 @@ const FileUpload = ({ onUpload }) => {
     e.preventDefault()
     setIsDragging(false)
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      simulateUpload(e.dataTransfer.files)
+      handleFiles(e.dataTransfer.files)
     }
   }
 
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      simulateUpload(e.target.files)
+      handleFiles(e.target.files)
     }
   }
 
@@ -101,16 +106,17 @@ const FileUpload = ({ onUpload }) => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      onClick={() => fileInputRef.current.click()}
+      onClick={() => !isUploading && fileInputRef.current.click()}
       style={{
         border: `2px dashed ${isDragging ? 'var(--primary-color)' : 'var(--border-color)'}`,
         backgroundColor: isDragging ? 'rgba(100, 108, 255, 0.05)' : 'var(--surface-color)',
         textAlign: 'center',
         padding: '4rem 2rem',
-        cursor: 'pointer',
+        cursor: isUploading ? 'not-allowed' : 'pointer',
         transition: 'all 0.3s ease',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        opacity: isUploading ? 0.6 : 1
       }}
     >
       <input
@@ -119,6 +125,7 @@ const FileUpload = ({ onUpload }) => {
         onChange={handleFileSelect}
         style={{ display: 'none' }}
         multiple
+        disabled={isUploading}
       />
       
       <div style={{ 
@@ -141,7 +148,7 @@ const FileUpload = ({ onUpload }) => {
       </div>
 
       <h3 style={{ marginBottom: '0.5rem', fontSize: '1.25rem' }}>
-        {isDragging ? 'Drop files to upload' : 'Click or drag files to upload'}
+        {isUploading ? 'Uploading...' : isDragging ? 'Drop files to upload' : 'Click or drag files to upload'}
       </h3>
 
       {error && (
@@ -175,6 +182,7 @@ const FileUpload = ({ onUpload }) => {
           </div>
         </div>
       )}
+
       <p style={{ color: 'var(--text-secondary)', margin: 0, maxWidth: '300px', marginInline: 'auto' }}>
         Support for documents, images, videos, and audio files.
       </p>
@@ -182,4 +190,4 @@ const FileUpload = ({ onUpload }) => {
   )
 }
 
-export default FileUpload
+export default FileUpload;

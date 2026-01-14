@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import api from '../utils/api';
 
 const AuthContext = createContext(null);
 
@@ -18,48 +19,77 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    // Mock login logic
-    // In real app: const response = await api.post('/login', { email, password });
-    
-    console.log('[MOCK] Logging in:', email);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const mockUser = {
-      id: 'mock-user-123',
-      email: email,
-      name: email.split('@')[0],
-    };
-    
-    const mockToken = 'mock-jwt-token-' + Date.now();
-
-    localStorage.setItem('authToken', mockToken);
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    setUser(mockUser);
-    
-    return mockUser;
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { token, user } = response.data;
+      
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
+      
+      return user;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Login failed');
+    }
   };
 
   const signup = async (name, email, password) => {
-    // Mock signup logic
-    console.log('[MOCK] Signing up:', { name, email });
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const mockUser = {
-      id: 'mock-user-' + Date.now(),
-      email: email,
-      name: name,
-    };
-    
-    const mockToken = 'mock-jwt-token-' + Date.now();
+    try {
+      // First register
+      await api.post('/auth/register', { name, email, password });
+      
+      // Then login
+      const response = await api.post('/auth/login', { email, password });
+      const { token, user } = response.data;
 
-    localStorage.setItem('authToken', mockToken);
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    setUser(mockUser);
-    
-    return mockUser;
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
+      
+      return user;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Signup failed');
+    }
+  };
+
+  const updateProfile = async (data) => {
+    try {
+      // If avatar is provided and it's a base64 string, upload it
+      if (data.avatar && data.avatar.startsWith('data:image')) {
+        // Convert base64 to blob
+        const response = await fetch(data.avatar);
+        const blob = await response.blob();
+        
+        // Create form data for avatar upload
+        const formData = new FormData();
+        formData.append('avatar', blob, 'avatar.jpg');
+        
+        // Upload avatar
+        const avatarResponse = await api.post('/profile/avatar', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        // Update user with new avatar URL
+        data.avatar = avatarResponse.data.avatar;
+      }
+      
+      // Update name if changed
+      if (data.name && data.name !== user.name) {
+        await api.put('/profile', { name: data.name });
+      }
+      
+      // Update local state
+      const updatedUser = { ...user, ...data };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      return updatedUser;
+    } catch (error) {
+      console.error('Profile update error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to update profile');
+    }
   };
 
   const logout = () => {
@@ -74,6 +104,7 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
+    updateProfile,
     isAuthenticated: !!user,
   };
 

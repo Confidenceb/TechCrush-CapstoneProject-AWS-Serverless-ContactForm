@@ -17,12 +17,21 @@ const Login = () => {
     setError('')
     setIsSubmitting(true)
     
+    console.log('=== LOGIN FORM SUBMISSION ===')
+    console.log('Email:', email)
+    console.log('Password length:', password.length)
+    
     try {
       await login(email, password)
+      console.log('Login successful, navigating to home...')
       navigate('/')
     } catch (err) {
-      setError('Failed to sign in. Please check your credentials.')
-      console.error(err)
+      console.error('Login error caught:', err)
+      console.error('Error message:', err.message)
+      console.error('Full error:', err)
+      
+      // Show the actual error message from the backend
+      setError(err.message || 'Failed to sign in. Please check your credentials.')
     } finally {
       setIsSubmitting(false)
     }

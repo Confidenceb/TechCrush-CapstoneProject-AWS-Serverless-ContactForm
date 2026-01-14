@@ -38,7 +38,7 @@ const Signup = () => {
       padding: '1rem',
       position: 'relative'
     }}>
-      <Link to="/" style={{ 
+      <Link to="/signup" style={{ 
         position: 'absolute', 
         top: '2rem', 
         left: '2rem', 
@@ -51,6 +51,7 @@ const Signup = () => {
       }}>
         <ArrowLeft size={18} /> Back to Home
       </Link>
+      
       <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ 
